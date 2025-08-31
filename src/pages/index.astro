@@ -1,0 +1,181 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import Header from '@/components/Header.astro';
+import StoryCard from '@/components/StoryCard.astro';
+import CosmicBadge from '@/components/CosmicBadge.astro';
+import { getAllStories, getAllAgeGroups, getAllEcoThemes } from '@/lib/cosmic';
+
+// Fetch all data
+const stories = await getAllStories();
+const ageGroups = await getAllAgeGroups();
+const ecoThemes = await getAllEcoThemes();
+
+// Get featured stories (first 3)
+const featuredStories = stories.slice(0, 3);
+
+// Access environment variable on server side
+const bucketSlug = import.meta.env.COSMIC_BUCKET_SLUG;
+---
+
+<Layout 
+  title="Cosmic Kids Stories - Eco-Conscious Adventures for Young Readers"
+  description="Discover engaging environmental stories that teach children about wildlife conservation, clean energy, and sustainable living through fun, age-appropriate adventures."
+>
+  <Header />
+  
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Hero Section -->
+    <section class="text-center mb-16">
+      <div class="animate-fade-in">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+          🌍 Welcome to 
+          <span class="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            Cosmic Kids Stories
+          </span>
+        </h1>
+        <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+          Discover magical environmental adventures that inspire young readers to care for our planet. 
+          From wildlife conservation to clean energy, explore stories that make learning about sustainability fun!
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a 
+            href="#featured-stories" 
+            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200"
+          >
+            Start Reading
+            <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+            </svg>
+          </a>
+          <a 
+            href="/age-groups" 
+            class="inline-flex items-center px-6 py-3 border-2 border-green-500 text-base font-medium rounded-lg text-green-700 bg-white hover:bg-green-50 transition-colors duration-200"
+          >
+            Browse by Age
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Age Groups Overview -->
+    <section class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Stories for Every Age</h2>
+        <p class="text-lg text-gray-600">Choose the perfect reading level for your young explorer</p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {ageGroups.map((ageGroup) => (
+          <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 text-center">
+            <div class="text-4xl mb-4">
+              {ageGroup.metadata?.reading_level?.value === 'Beginner' && '🌱'}
+              {ageGroup.metadata?.reading_level?.value === 'Intermediate' && '🌿'}
+              {ageGroup.metadata?.reading_level?.value === 'Advanced' && '🌳'}
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">{ageGroup.title}</h3>
+            <p class="text-green-600 font-medium mb-3">
+              {ageGroup.metadata?.reading_level?.value} Level
+            </p>
+            {ageGroup.metadata?.description && (
+              <p class="text-gray-600 text-sm mb-4">{ageGroup.metadata.description}</p>
+            )}
+            <a 
+              href={`/age-groups/${ageGroup.slug}`}
+              class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              View Stories
+              <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </a>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Eco Themes -->
+    <section class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Environmental Themes</h2>
+        <p class="text-lg text-gray-600">Explore stories that teach important lessons about our planet</p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {ecoThemes.map((theme) => (
+          <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+            {theme.metadata?.theme_icon && (
+              <div class="aspect-[16/9] overflow-hidden">
+                <img 
+                  src={`${theme.metadata.theme_icon.imgix_url}?w=600&h=300&fit=crop&auto=format,compress`}
+                  alt={theme.metadata?.theme_name || theme.title}
+                  width="300"
+                  height="150"
+                  class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            )}
+            <div class="p-6">
+              <h3 class="text-xl font-semibold text-gray-900 mb-3">
+                {theme.metadata?.theme_name || theme.title}
+              </h3>
+              {theme.metadata?.description && (
+                <p class="text-gray-600 text-sm mb-4">{theme.metadata.description}</p>
+              )}
+              <a 
+                href={`/themes/${theme.slug}`}
+                class="inline-flex items-center text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                Explore Theme
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Featured Stories -->
+    <section id="featured-stories" class="mb-16">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Featured Stories</h2>
+        <p class="text-lg text-gray-600">Start your eco-adventure with these popular tales</p>
+      </div>
+      
+      {featuredStories.length > 0 ? (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {featuredStories.map((story) => (
+            <div class="animate-slide-up">
+              <StoryCard story={story} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-12">
+          <div class="text-6xl mb-4">📚</div>
+          <h3 class="text-2xl font-semibold text-gray-900 mb-4">No stories yet!</h3>
+          <p class="text-gray-600 mb-6">Stories are on their way. Check back soon for amazing eco-adventures!</p>
+        </div>
+      )}
+    </section>
+
+    <!-- View All Stories -->
+    {stories.length > 3 && (
+      <section class="text-center">
+        <a 
+          href="/stories"
+          class="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200"
+        >
+          View All {stories.length} Stories
+          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+        </a>
+      </section>
+    )}
+  </main>
+
+  <!-- Cosmic Badge -->
+  <CosmicBadge bucketSlug={bucketSlug} />
+</Layout>

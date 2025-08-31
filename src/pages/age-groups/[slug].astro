@@ -1,0 +1,228 @@
+// src/pages/age-groups/[slug].astro
+---
+export interface Props {
+  ageGroup: any; // TODO: Define proper type
+  stories: any; // TODO: Define proper type
+}
+
+import Layout from '@/layouts/Layout.astro';
+import Header from '@/components/Header.astro';
+import StoryCard from '@/components/StoryCard.astro';
+import CosmicBadge from '@/components/CosmicBadge.astro';
+import { getAllAgeGroups, getStoriesByAgeGroup } from '@/lib/cosmic';
+import type { AgeGroup } from '@/types';
+
+export async function getStaticPaths() {
+  const ageGroups = await getAllAgeGroups();
+  
+  const paths = await Promise.all(
+    ageGroups.map(async (ageGroup) => {
+      const stories = await getStoriesByAgeGroup(ageGroup.id);
+      return {
+        params: { slug: ageGroup.slug },
+        props: { ageGroup, stories },
+      };
+    })
+  );
+  
+  return paths;
+}
+
+interface Props {
+  ageGroup: AgeGroup;
+  stories: any[];
+}
+
+const { ageGroup, stories } = Astro.props;
+
+// Access environment variable on server side
+const bucketSlug = import.meta.env.COSMIC_BUCKET_SLUG;
+---
+
+<Layout 
+  title={`${ageGroup.title} Stories - Cosmic Kids Stories`}
+  description={`Discover environmental stories perfect for ${ageGroup.title}. ${ageGroup.metadata?.description || ''}`}
+>
+  <Header />
+  
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Age Group Header -->
+    <div class="text-center mb-16">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mb-6">
+        <span class="text-4xl">
+          {ageGroup.metadata?.reading_level?.value === 'Beginner' && '🌱'}
+          {ageGroup.metadata?.reading_level?.value === 'Intermediate' && '🌿'}
+          {ageGroup.metadata?.reading_level?.value === 'Advanced' && '🌳'}
+        </span>
+      </div>
+      
+      <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+        {ageGroup.title}
+      </h1>
+      
+      <div class="flex flex-wrap justify-center gap-3 mb-6">
+        {ageGroup.metadata?.age_range && (
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            📅 {ageGroup.metadata.age_range}
+          </span>
+        )}
+        {ageGroup.metadata?.reading_level && (
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+            📊 {ageGroup.metadata.reading_level.value} Level
+          </span>
+        )}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+          📚 {stories.length} {stories.length === 1 ? 'Story' : 'Stories'}
+        </span>
+      </div>
+      
+      {ageGroup.metadata?.description && (
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          {ageGroup.metadata.description}
+        </p>
+      )}
+    </div>
+
+    <!-- Stories Grid -->
+    {stories.length > 0 ? (
+      <section class="mb-16">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {stories.map((story) => (
+            <div class="animate-slide-up">
+              <StoryCard story={story} />
+            </div>
+          ))}
+        </div>
+      </section>
+    ) : (
+      <div class="text-center py-16">
+        <div class="text-8xl mb-6">📚</div>
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">No stories yet for this age group!</h2>
+        <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          Stories for {ageGroup.title} are coming soon. Check back later for new eco-adventures!
+        </p>
+        <a 
+          href="/age-groups"
+          class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
+        >
+          Browse Other Age Groups
+          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </a>
+      </div>
+    )}
+
+    <!-- Reading Level Info -->
+    {ageGroup.metadata?.reading_level && (
+      <section class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-16">
+        <div class="text-center">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            About {ageGroup.metadata.reading_level.value} Level Reading
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {ageGroup.metadata.reading_level.value === 'Beginner' && (
+              <>
+                <div class="bg-white rounded-lg p-6">
+                  <h3 class="font-semibold text-gray-900 mb-2">Story Features</h3>
+                  <ul class="text-gray-600 text-sm space-y-1">
+                    <li>• Simple vocabulary</li>
+                    <li>• Short sentences</li>
+                    <li>• Colorful illustrations</li>
+                    <li>• Clear moral lessons</li>
+                  </ul>
+                </div>
+                <div class="bg-white rounded-lg p-6">
+                  <h3 class="font-semibold text-gray-900 mb-2">Learning Focus</h3>
+                  <ul class="text-gray-600 text-sm space-y-1">
+                    <li>• Basic environmental concepts</li>
+                    <li>• Repetition for memory</li>
+                    <li>• Familiar situations</li>
+                    <li>• Engaging characters</li>
+                  </ul>
+                </div>
+              </>
+            )}
+            
+            {ageGroup.metadata.reading_level.value === 'Intermediate' && (
+              <>
+                <div class="bg-white rounded-lg p-6">
+                  <h3 class="font-semibold text-gray-900 mb-2">Story Features</h3>
+                  <ul class="text-gray-600 text-sm space-y-1">
+                    <li>• Expanded vocabulary</li>
+                    <li>• More complex plots</li>
+                    <li>• Longer narratives</li>
+                    <li>• Character development</li>
+                  </ul>
+                </div>
+                <div class="bg-white rounded-lg p-6">
+                  <h3 class="font-semibold text-gray-900 mb-2">Learning Focus</h3>
+                  <ul class="text-gray-600 text-sm space-y-1">
+                    <li>• Environmental concepts through adventure</li>
+                    <li>• Problem-solving scenarios</li>
+                    <li>• Cause and effect relationships</li>
+                    <li>• Building reading confidence</li>
+                  </ul>
+                </div>
+              </>
+            )}
+            
+            {ageGroup.metadata.reading_level.value === 'Advanced' && (
+              <>
+                <div class="bg-white rounded-lg p-6">
+                  <h3 class="font-semibold text-gray-900 mb-2">Story Features</h3>
+                  <ul class="text-gray-600 text-sm space-y-1">
+                    <li>• Chapter-style format</li>
+                    <li>• Sophisticated themes</li>
+                    <li>• Rich vocabulary</li>
+                    <li>• Multi-layered plots</li>
+                  </ul>
+                </div>
+                <div class="bg-white rounded-lg p-6">
+                  <h3 class="font-semibold text-gray-900 mb-2">Learning Focus</h3>
+                  <ul class="text-gray-600 text-sm space-y-1">
+                    <li>• Detailed environmental science</li>
+                    <li>• Critical thinking skills</li>
+                    <li>• Complex moral discussions</li>
+                    <li>• Independent reading</li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- Navigation -->
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+      <a 
+        href="/age-groups"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+      >
+        <svg class="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        All Age Groups
+      </a>
+      
+      <div class="flex gap-3">
+        <a 
+          href="/themes"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+        >
+          Browse by Theme
+        </a>
+        <a 
+          href="/"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all"
+        >
+          Home
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Cosmic Badge -->
+  <CosmicBadge bucketSlug={bucketSlug} />
+</Layout>

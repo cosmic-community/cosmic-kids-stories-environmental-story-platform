@@ -1,0 +1,103 @@
+---
+import type { Story } from '@/types';
+
+export interface Props {
+  story: Story;
+  showAuthor?: boolean;
+}
+
+const { story, showAuthor = false } = Astro.props;
+
+// Safe access to potentially undefined properties
+const storyTitle = story.metadata?.story_title || story.title;
+const featuredImage = story.metadata?.featured_illustration;
+const ageGroup = story.metadata?.age_group;
+const ecoTheme = story.metadata?.eco_theme;
+const readingTime = story.metadata?.reading_time;
+const moralLesson = story.metadata?.moral_lesson;
+---
+
+<article class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden group">
+  <!-- Featured Image -->
+  {featuredImage && (
+    <div class="aspect-[16/9] overflow-hidden">
+      <img 
+        src={`${featuredImage.imgix_url}?w=800&h=450&fit=crop&auto=format,compress`}
+        alt={storyTitle}
+        width="400"
+        height="225"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+      />
+    </div>
+  )}
+  
+  <div class="p-6">
+    <!-- Age Group & Theme Tags -->
+    <div class="flex items-center gap-2 mb-3">
+      {ageGroup && (
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          {ageGroup.metadata?.age_range || ageGroup.title}
+        </span>
+      )}
+      {ecoTheme && (
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          {ecoTheme.metadata?.theme_name || ecoTheme.title}
+        </span>
+      )}
+      {readingTime && (
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+          📖 {readingTime}
+        </span>
+      )}
+    </div>
+    
+    <!-- Story Title -->
+    <h3 class="text-xl font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
+      <a href={`/stories/${story.slug}`} class="hover:underline">
+        {storyTitle}
+      </a>
+    </h3>
+    
+    <!-- Moral Lesson -->
+    {moralLesson && (
+      <p class="text-gray-600 text-sm mb-4 line-clamp-3">
+        {moralLesson}
+      </p>
+    )}
+    
+    <!-- Read More Button -->
+    <div class="flex items-center justify-between">
+      <a 
+        href={`/stories/${story.slug}`}
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
+      >
+        Read Story
+        <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+      
+      {ageGroup?.metadata?.reading_level && (
+        <span class="text-xs text-gray-500 font-medium">
+          {ageGroup.metadata.reading_level.value} Level
+        </span>
+      )}
+    </div>
+  </div>
+</article>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

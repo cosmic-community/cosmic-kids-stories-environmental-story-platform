@@ -1,16 +1,11 @@
 // src/pages/age-groups/[slug].astro
 ---
-export interface Props {
-  ageGroup: any; // TODO: Define proper type
-  stories: any; // TODO: Define proper type
-}
-
 import Layout from '@/layouts/Layout.astro';
 import Header from '@/components/Header.astro';
 import StoryCard from '@/components/StoryCard.astro';
 import CosmicBadge from '@/components/CosmicBadge.astro';
 import { getAllAgeGroups, getStoriesByAgeGroup } from '@/lib/cosmic';
-import type { AgeGroup } from '@/types';
+import type { AgeGroup, Story } from '@/types';
 
 export async function getStaticPaths() {
   const ageGroups = await getAllAgeGroups();
@@ -28,9 +23,9 @@ export async function getStaticPaths() {
   return paths;
 }
 
-interface Props {
+export interface Props {
   ageGroup: AgeGroup;
-  stories: any[];
+  stories: Story[];
 }
 
 const { ageGroup, stories } = Astro.props;
@@ -87,7 +82,7 @@ const bucketSlug = import.meta.env.COSMIC_BUCKET_SLUG;
     {stories.length > 0 ? (
       <section class="mb-16">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {stories.map((story) => (
+          {stories.map((story: Story) => (
             <div class="animate-slide-up">
               <StoryCard story={story} />
             </div>

@@ -8,10 +8,12 @@ import type { Story } from '@/types';
 export async function getStaticPaths() {
   const stories = await getAllStories();
   
-  return stories.map((story: Story) => ({
+  const paths = stories.map((story) => ({
     params: { slug: story.slug },
     props: { story },
   }));
+  
+  return paths;
 }
 
 export interface Props {
@@ -20,17 +22,17 @@ export interface Props {
 
 const { story } = Astro.props;
 
-// Safe access to potentially undefined properties with proper typing
-const storyTitle: string = story.metadata?.story_title || story.title;
-const storyContent: string | undefined = story.metadata?.story_content;
+// Safe access to potentially undefined properties with proper null checks
+const storyTitle = story.metadata?.story_title || story.title;
+const storyContent = story.metadata?.story_content;
 const featuredImage = story.metadata?.featured_illustration;
 const ageGroup = story.metadata?.age_group;
 const ecoTheme = story.metadata?.eco_theme;
-const readingTime: string | undefined = story.metadata?.reading_time;
-const moralLesson: string | undefined = story.metadata?.moral_lesson;
+const readingTime = story.metadata?.reading_time;
+const moralLesson = story.metadata?.moral_lesson;
 
 // Access environment variable on server side
-const bucketSlug: string = import.meta.env.COSMIC_BUCKET_SLUG;
+const bucketSlug = import.meta.env.COSMIC_BUCKET_SLUG;
 ---
 
 <Layout 
@@ -41,22 +43,25 @@ const bucketSlug: string = import.meta.env.COSMIC_BUCKET_SLUG;
   
   <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Story Header -->
-    <div class="mb-8">
-      <!-- Featured Image -->
-      {featuredImage && (
-        <div class="aspect-[16/9] rounded-2xl overflow-hidden mb-8">
-          <img 
-            src={`${featuredImage.imgix_url}?w=1200&h=675&fit=crop&auto=format,compress`}
-            alt={storyTitle}
-            width="1200"
-            height="675"
-            class="w-full h-full object-cover"
-          />
-        </div>
-      )}
+    {featuredImage && (
+      <div class="aspect-[16/9] rounded-2xl overflow-hidden mb-8">
+        <img 
+          src={`${featuredImage.imgix_url}?w=1200&h=675&fit=crop&auto=format,compress`}
+          alt={storyTitle}
+          width="1200"
+          height="675"
+          class="w-full h-full object-cover"
+        />
+      </div>
+    )}
+
+    <!-- Story Meta -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+        {storyTitle}
+      </h1>
       
-      <!-- Story Meta -->
-      <div class="flex flex-wrap items-center gap-3 mb-6">
+      <div class="flex flex-wrap justify-center gap-3 mb-6">
         {ageGroup && (
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
             👶 {ageGroup.metadata?.age_range || ageGroup.title}
@@ -78,18 +83,13 @@ const bucketSlug: string = import.meta.env.COSMIC_BUCKET_SLUG;
           </span>
         )}
       </div>
-      
-      <!-- Story Title -->
-      <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-        {storyTitle}
-      </h1>
     </div>
 
     <!-- Story Content -->
     <article class="prose prose-lg max-w-none mb-12">
       {storyContent && (
         <div 
-          class="text-gray-700 leading-relaxed"
+          class="story-content text-gray-700 leading-relaxed"
           set:html={storyContent}
         />
       )}
@@ -97,89 +97,96 @@ const bucketSlug: string = import.meta.env.COSMIC_BUCKET_SLUG;
 
     <!-- Moral Lesson -->
     {moralLesson && (
-      <section class="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-8 mb-12">
+      <section class="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-8 mb-12">
         <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">
-          🌱 What We Learn
+          💡 What We Learn
         </h2>
-        <div class="max-w-3xl mx-auto text-center">
-          <p class="text-gray-700 leading-relaxed">{moralLesson}</p>
+        <p class="text-gray-700 leading-relaxed">{moralLesson}</p>
+      </section>
+    )}
+
+    <!-- Related Information -->
+    {(ageGroup || ecoTheme) && (
+      <section class="bg-white rounded-2xl shadow-sm border p-8 mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Learn More</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {ageGroup && (
+            <div class="bg-blue-50 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-blue-900 mb-3">
+                👶 Age Group: {ageGroup.title}
+              </h3>
+              {ageGroup.metadata?.description && (
+                <p class="text-blue-800 text-sm mb-3">{ageGroup.metadata.description}</p>
+              )}
+              <a 
+                href={`/age-groups/${ageGroup.slug}`}
+                class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm"
+              >
+                More stories for this age
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </a>
+            </div>
+          )}
+          
+          {ecoTheme && (
+            <div class="bg-green-50 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-green-900 mb-3">
+                🌱 Theme: {ecoTheme.metadata?.theme_name || ecoTheme.title}
+              </h3>
+              {ecoTheme.metadata?.description && (
+                <p class="text-green-800 text-sm mb-3">{ecoTheme.metadata.description}</p>
+              )}
+              <a 
+                href={`/themes/${ecoTheme.slug}`}
+                class="inline-flex items-center text-green-600 hover:text-green-800 font-medium text-sm"
+              >
+                More stories about this theme
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </a>
+            </div>
+          )}
         </div>
       </section>
     )}
 
-    <!-- Related Info -->
-    {(ageGroup || ecoTheme) && (
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        {ageGroup && (
-          <div class="bg-white rounded-xl border border-blue-100 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">
-              👶 Age Group: {ageGroup.title}
-            </h3>
-            {ageGroup.metadata?.description && (
-              <div>
-                <p class="text-blue-800 text-sm mb-3">{ageGroup.metadata.description}</p>
-                <a 
-                  href={`/age-groups/${ageGroup.slug}`}
-                  class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  View more stories for this age group
-                  <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </a>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {ecoTheme && (
-          <div class="bg-white rounded-xl border border-green-100 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">
-              🌱 Theme: {ecoTheme.metadata?.theme_name || ecoTheme.title}
-            </h3>
-            {ecoTheme.metadata?.description && (
-              <div>
-                <p class="text-green-800 text-sm mb-3">{ecoTheme.metadata.description}</p>
-                <a 
-                  href={`/themes/${ecoTheme.slug}`}
-                  class="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-700"
-                >
-                  Explore this theme
-                  <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </a>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-    )}
-
     <!-- Navigation -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-gray-200">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
       <a 
-        href="/"
+        href="/stories"
         class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
       >
         <svg class="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
-        Back to Stories
+        All Stories
       </a>
       
       <div class="flex gap-3">
+        {ageGroup && (
+          <a 
+            href={`/age-groups/${ageGroup.slug}`}
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            More {ageGroup.title} Stories
+          </a>
+        )}
+        {ecoTheme && (
+          <a 
+            href={`/themes/${ecoTheme.slug}`}
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+          >
+            More {ecoTheme.metadata?.theme_name || ecoTheme.title} Stories
+          </a>
+        )}
         <a 
-          href="/age-groups"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+          href="/"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-blue-600 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all"
         >
-          Browse by Age
-        </a>
-        <a 
-          href="/themes"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-        >
-          Browse by Theme
+          Home
         </a>
       </div>
     </div>
@@ -190,32 +197,30 @@ const bucketSlug: string = import.meta.env.COSMIC_BUCKET_SLUG;
 </Layout>
 
 <style>
-  .prose {
-    max-width: none;
+  .story-content {
+    font-size: 1.125rem;
+    line-height: 1.75;
   }
   
-  .prose h1,
-  .prose h2,
-  .prose h3,
-  .prose h4,
-  .prose h5,
-  .prose h6 {
-    @apply text-gray-900 font-bold;
+  .story-content h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #1f2937;
   }
   
-  .prose h2 {
-    @apply text-2xl mb-4 mt-8;
+  .story-content p {
+    margin-bottom: 1.5rem;
   }
   
-  .prose p {
-    @apply mb-4 text-gray-700 leading-relaxed;
+  .story-content strong {
+    font-weight: 600;
+    color: #059669;
   }
   
-  .prose strong {
-    @apply text-gray-900 font-semibold;
-  }
-  
-  .prose em {
-    @apply text-gray-600;
+  .story-content em {
+    font-style: italic;
+    color: #6b7280;
   }
 </style>

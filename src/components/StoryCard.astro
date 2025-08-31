@@ -3,10 +3,9 @@ import type { Story } from '@/types';
 
 export interface Props {
   story: Story;
-  showAuthor?: boolean;
 }
 
-const { story, showAuthor = false } = Astro.props;
+const { story } = Astro.props;
 
 // Safe access to potentially undefined properties
 const storyTitle = story.metadata?.story_title || story.title;

@@ -1,5 +1,5 @@
 import { createBucketClient } from '@cosmicjs/sdk';
-import type { Story, AgeGroup, EcoTheme, CosmicResponse } from '../types';
+import type { Story, AgeGroup, EcoTheme } from '../types';
 
 export const cosmic = createBucketClient({
   bucketSlug: import.meta.env.COSMIC_BUCKET_SLUG,

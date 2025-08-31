@@ -1,9 +1,9 @@
-(function() {
+(function () {
   if (window.self === window.top) return;
-  
+
   const logs = [];
   const MAX_LOGS = 500;
-  
+
   const originalConsole = {
     log: console.log,
     warn: console.warn,
@@ -11,63 +11,80 @@
     info: console.info,
     debug: console.debug
   };
-  
+
   function captureLog(level, args) {
     const timestamp = new Date().toISOString();
     const message = args.map(arg => {
       if (typeof arg === 'object' && arg !== null) {
         try {
-          return JSON.stringify(arg, (key, value) => {
+          return JSON.stringify(arg, (_, value) => {
             if (typeof value === 'function') return '[Function]';
             if (value instanceof Error) return value.toString();
             return value;
-          }, 2);
+          });
         } catch (e) {
           return '[Object]';
         }
       }
       return String(arg);
     }).join(' ');
-    
+
     const logEntry = {
       timestamp,
       level,
       message,
       url: window.location.href
     };
-    
+
     logs.push(logEntry);
     if (logs.length > MAX_LOGS) {
       logs.shift();
     }
-    
+
     try {
       window.parent.postMessage({
         type: 'console-log',
         log: logEntry
       }, '*');
-    } catch (e) {}
+    } catch (e) { }
   }
-  
+
   // Override console methods
-  ['log', 'warn', 'error', 'info', 'debug'].forEach(method => {
-    console[method] = function(...args) {
-      originalConsole[method].apply(console, args);
-      captureLog(method, args);
-    };
-  });
-  
+  console.log = function(...args) {
+    captureLog('log', args);
+    originalConsole.log.apply(console, args);
+  };
+
+  console.warn = function(...args) {
+    captureLog('warn', args);
+    originalConsole.warn.apply(console, args);
+  };
+
+  console.error = function(...args) {
+    captureLog('error', args);
+    originalConsole.error.apply(console, args);
+  };
+
+  console.info = function(...args) {
+    captureLog('info', args);
+    originalConsole.info.apply(console, args);
+  };
+
+  console.debug = function(...args) {
+    captureLog('debug', args);
+    originalConsole.debug.apply(console, args);
+  };
+
   // Capture unhandled errors
   window.addEventListener('error', function(event) {
-    captureLog('error', [`Unhandled error: ${event.message}`, `at ${event.filename}:${event.lineno}:${event.colno}`]);
+    captureLog('error', [`Unhandled error: ${event.error ? event.error.stack || event.error : event.message}`]);
   });
-  
+
   // Capture unhandled promise rejections
   window.addEventListener('unhandledrejection', function(event) {
     captureLog('error', [`Unhandled promise rejection: ${event.reason}`]);
   });
-  
-  // Send ready message
+
   function sendReady() {
     try {
       window.parent.postMessage({
@@ -75,10 +92,9 @@
         url: window.location.href,
         timestamp: new Date().toISOString()
       }, '*');
-    } catch (e) {}
+    } catch (e) { }
   }
-  
-  // Send route change message
+
   function sendRouteChange() {
     try {
       window.parent.postMessage({
@@ -91,10 +107,10 @@
         },
         timestamp: new Date().toISOString()
       }, '*');
-    } catch (e) {}
+    } catch (e) { }
   }
-  
-  // Send ready message on load
+
+  // Send ready message when page loads
   if (document.readyState === 'complete') {
     sendReady();
     sendRouteChange();
@@ -104,18 +120,18 @@
       sendRouteChange();
     });
   }
-  
-  // Monitor route changes for SPAs
+
+  // Monitor route changes for SPA navigation
   const originalPushState = history.pushState;
   const originalReplaceState = history.replaceState;
   
-  history.pushState = function() {
-    originalPushState.apply(history, arguments);
+  history.pushState = function(...args) {
+    originalPushState.apply(history, args);
     setTimeout(sendRouteChange, 0);
   };
   
-  history.replaceState = function() {
-    originalReplaceState.apply(history, arguments);
+  history.replaceState = function(...args) {
+    originalReplaceState.apply(history, args);
     setTimeout(sendRouteChange, 0);
   };
   
